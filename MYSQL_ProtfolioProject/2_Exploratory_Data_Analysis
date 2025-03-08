@@ -1,0 +1,41 @@
+-- EDA
+-- its random EDA ; exploring everything
+
+-- looking for the company with highest layoffs in one day
+
+SELECT 
+    company,
+    country,
+    date,
+    total_laid_off,
+    percentage_laid_off
+FROM
+    layoffs_staging2
+Where 
+    total_laid_off = (Select 
+    Max(total_laid_off)
+FROM
+    layoffs_staging2);
+
+
+-- looking for companies whose laid percentage is >1 at one single day
+
+SELECT 
+    *
+FROM
+    layoffs_staging2
+Where 
+    percentage_laid_off >= 1
+ORDER BY
+    total_laid_off DESC;
+
+SELECT
+    company,
+    sum(total_laid_off) as Total_laid_offs,
+    Count(total_laid_off) as Times_laid_offs
+FROM
+    layoffs_staging2
+GROUP BY
+    company
+ORDER BY
+    2 DESC;
