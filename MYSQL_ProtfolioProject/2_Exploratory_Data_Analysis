@@ -18,7 +18,7 @@ FROM
     layoffs_staging2);
 
 
--- looking for companies whose laid percentage is >1 at one single day
+-- looking for companies whose laid percentage is > 1 at one single day
 
 SELECT 
     *
@@ -29,6 +29,7 @@ Where
 ORDER BY
     total_laid_off DESC;
 
+-- Looking for total layoffs and how many times layoffs happened by a company in 3 years
 SELECT
     company,
     sum(total_laid_off) as Total_laid_offs,
@@ -39,3 +40,112 @@ GROUP BY
     company
 ORDER BY
     2 DESC;
+
+-- Seeing the expansion date of our data
+Select
+    Max(date),
+    Min(date)
+FROM
+    layoffs_staging2;
+
+-- layoffs by industry
+
+SELECT
+    industry,
+    sum(total_laid_off) as Total_laid_offs,
+    Count(total_laid_off) as Times_laid_offs
+FROM
+    layoffs_staging2
+GROUP BY
+    industry
+ORDER BY
+    2 DESC;
+
+
+-- layoffs by countries
+
+SELECT
+    country,
+    sum(total_laid_off) as Total_laid_offs,
+    Count(total_laid_off) as Times_laid_offs
+FROM
+    layoffs_staging2
+GROUP BY
+    country
+ORDER BY
+    2 DESC;
+
+-- layoffs per year
+
+SELECT
+    YEAR(`date`),
+    sum(total_laid_off) as Total_laid_offs,
+    Count(total_laid_off) as Times_laid_offs
+FROM
+    layoffs_staging2
+GROUP BY
+    YEAR(`date`)
+ORDER BY
+    1 DESC;
+
+-- layoffs per Month
+
+SELECT
+    Substring(`date`,1,7) as Month,
+    sum(total_laid_off) as Total_laid_offs,
+    Count(total_laid_off) as Times_laid_offs
+FROM
+    layoffs_staging2
+Where
+    Substring(`date`,1,7) is not null
+GROUP BY
+    Month
+ORDER BY
+    1;
+
+
+-- Rolling Total per month
+
+With Rolling_Total AS (
+SELECT
+    Substring(`date`,1,7) as Month,
+    sum(total_laid_off) as Total_laid_offs
+FROM
+    layoffs_staging2
+Where
+    Substring(`date`,1,7) is not null
+GROUP BY
+    Month)
+
+SELECT
+    `Month`,
+    Total_laid_offs,
+    Sum(Total_laid_offs) OVER(ORDER BY `Month`)
+From
+    Rolling_Total
+order BY
+    1;
+
+-- Ranking based on total_laid_offs per year by a company
+With Ranking_Layoffs_Per_Year AS(
+Select 
+    company,
+    YEAR(`date`) as year,
+    total_laid_off,
+    DENSE_RANK() OVER (PARTITION BY YEAR(`date`) ORDER BY total_laid_off DESC) AS Ranking
+FROM
+    layoffs_staging2
+Where 
+    YEAR(`date`) is not null
+ORDER BY
+    Ranking, total_laid_off DESC
+)
+
+SELECT  
+    * 
+FROM    
+    Ranking_Layoffs_Per_Year
+Where
+    Ranking <= 5
+ORDER BY 
+    year, Ranking;
